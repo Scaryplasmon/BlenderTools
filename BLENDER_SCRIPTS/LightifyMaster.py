@@ -14,7 +14,7 @@ def create_spot_rig():
     if emptylight:
         print ("AlreadyHere")    
     else :
-        bpy.ops.object.empty_add(type='CUBE', radius=0.31, align='CURSOR', scale=(1, 1, 1))
+        bpy.ops.object.empty_add(type='CUBE', radius=0.6, align='CURSOR', scale=(1, 1, 1))
         bpy.context.active_object.name = 'EMPTYLIGHT'
         
     #create new Light object
@@ -355,8 +355,8 @@ class LightifyPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator('spot.create', text='Create Light Objects')
-        layout.operator('roof.create', text='Create Light Objects')
+        layout.operator('spot.create', text='Create Spot Rig')
+        layout.operator('roof.create', text='Create Roof Rig')
 
 def register():
     bpy.utils.register_class(SpotRig)
