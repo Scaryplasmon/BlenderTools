@@ -1,11 +1,11 @@
 bl_info = {
     "name" : "CakeParticles",
-    "author" : "A group of People that loves Cakes", 
+    "author" : "ScaryPlasmon", 
     "description" : "An addon that Makes Baking Particles into Objects easy as Eating a Piece of Cake",
     "blender" : (3, 0, 0),
-    "version" : (1, 0, 4),
+    "version" : (1, 1, 1),
     "location" : "ObjectProperties",
-    "waring" : "",
+    "warning" : "",
     "doc_url": "https://sites.google.com/view/cakeparticlesdocs/home-page", 
     "tracker_url": "", 
     "category" : "Physics" 
