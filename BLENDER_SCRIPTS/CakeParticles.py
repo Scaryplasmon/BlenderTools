@@ -3,7 +3,7 @@ bl_info = {
     "author" : "ScaryPlasmon", 
     "description" : "An addon that Makes Baking Particles into Objects easy as Eating a Piece of Cake",
     "blender" : (3, 0, 0),
-    "version" : (1, 1, 1),
+    "version" : (2, 0, 0),
     "location" : "ObjectProperties",
     "warning" : "",
     "doc_url": "https://sites.google.com/view/cakeparticlesdocs/home-page", 
