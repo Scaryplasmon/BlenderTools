@@ -87,27 +87,26 @@ def match_and_keyframe_objects(ps, obj_list, start_frame, end_frame, bake_step=1
             match_object_to_particle(p, obj)
             keyframe_obj(obj)
 
-
 def match_object_to_particle(p, obj):
 
-    loc = p.location
-    rot = p.rotation
-    size = p.size
-    if p.alive_state == 'ALIVE':
-        vis = True
-    else:
-        vis = False
-    obj.location = loc
- 
-    obj.rotation_mode = 'QUATERNION'
-    obj.rotation_quaternion = rot
-    if KEYFRAME_VISIBILITY_SCALE:
-        if vis:
-            obj.scale = (size, size, size)
-        if not vis:
-            obj.scale = (0.001, 0.001, 0.001)
-    obj.hide_viewport = (vis)
-    obj.hide_render = (vis)
+        loc = p.location
+        rot = p.rotation
+        size = p.size
+        if p.alive_state == 'ALIVE':
+            vis = True
+        else:
+            vis = False
+        obj.location = loc
+    
+        obj.rotation_mode = 'QUATERNION'
+        obj.rotation_quaternion = rot
+        if KEYFRAME_VISIBILITY_SCALE:
+            if vis:
+                obj.scale = (size, size, size)
+            if not vis:
+                obj.scale = (0.0001, 0.0001, 0.0001)
+        obj.hide_viewport = not (vis)
+        obj.hide_render = not (vis)
 
 def keyframe_obj(obj):
 
@@ -120,6 +119,27 @@ def keyframe_obj(obj):
     if KEYFRAME_VISIBILITY:
         obj.keyframe_insert("hide_viewport")
         obj.keyframe_insert("hide_render")
+
+def remove_fake_users(collection_name):
+    # Get the collection by name
+    coll = bpy.data.collections.get(collection_name)
+
+    # Check if such a collection exists in the current Blender file
+    if not coll:
+        print(f"No collection named '{collection_name}' found")
+        return
+
+    # Iterate over the objects in the collection
+    for obj in coll.objects:
+        # Remove the mesh data block, if it exists
+        if obj.data and obj.data.use_fake_user:
+            bpy.data.meshes.remove(obj.data, do_unlink=True)
+
+        # Remove the object from the current scene and Blender file.
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+    # Remove the collection itself
+    bpy.data.collections.remove(coll)
 
 
 def main(bake_step):
@@ -178,10 +198,14 @@ class SNA_PT_CAKEPARTICLES_A5926(bpy.types.Panel):
         col_5B084.alignment = 'Left'.upper()
         col_5B084.label(text='Keep the Emitter Active ', icon_value=256)
         col_5B084.label(text='and the Particle Object selected', icon_value=0)
+        col_5B084.label(text='Choose the Bake Step', icon_value=0)
         op = box_CDFD2.operator('sna.opbakeparticles_81b66', text='BakeParticles into KeyFrames', icon_value=181, emboss=True, depress=False)
         box = layout.box()
+        box.label(text='Higher values = Less keyframes')
         box.prop(context.window_manager, "sna_opbakeparticles_81b66_bake_step", text="Bake Step")
-        # op = box_CDFD2.operator('sna.opbakeparticles_81b66', text='BakeIT', icon_value=181, emboss=True, depress=False)
+        box.label(text='More Accurate results when baking at 1')
+        layout.label(text='Clear the "particles" collection, use Ctrl + Z for Better results!')
+        layout.operator('sna.remove_fake_users')
         op.bake_step = context.window_manager.sna_opbakeparticles_81b66_bake_step
         box_801E9 = layout.box()
         box_801E9.alert = False
@@ -276,6 +300,17 @@ class SNA_OT_Opbakeparticles_81B66(bpy.types.Operator):
         
         
         return self.execute(context)
+    
+class SNA_OT_RemoveFakeUsers(bpy.types.Operator):
+    bl_idname = "sna.remove_fake_users"
+    bl_label = "Clear Previous Bake"
+    bl_description = "Remove all objects in the 'particles' Collection and their data blocks (also with fake users)"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        remove_fake_users("particles")
+        print("Cleared Previous Bake")
+        return {"FINISHED"}
 
 
 
@@ -293,6 +328,8 @@ def register():
         min=1,
         description="Bake every N frames"
     )
+    bpy.utils.register_class(SNA_OT_RemoveFakeUsers)
+
 
 def unregister():
     
@@ -309,5 +346,7 @@ def unregister():
     bpy.utils.unregister_class(SNA_PT_CAKEPARTICLES_A5926)
     bpy.utils.unregister_class(SNA_OT_Opbakeparticles_81B66)
     del bpy.types.WindowManager.sna_opbakeparticles_81b66_bake_step
+    bpy.utils.unregister_class(SNA_OT_RemoveFakeUsers)
+
 
 
