@@ -63,14 +63,16 @@ KEYFRAME_VISIBILITY = False
 KEYFRAME_VISIBILITY_SCALE = True
 
 
-def create_objects_for_particles(ps, obj):
+def create_objects_for_particles(ps, objs):
 
     obj_list = []
-    mesh = obj.data
+    
     particles_coll = bpy.data.collections.new(name="particles")
     bpy.context.scene.collection.children.link(particles_coll)
 
     for i, _ in enumerate(ps.particles):
+        idx = i % len(objs)        # Index of the object is based on particles index modulus total number of selected objects.
+        mesh = objs[idx].data
         dupli = bpy.data.objects.new(
                     name="particle.{:03d}".format(i),
                     object_data=mesh)
@@ -136,20 +138,18 @@ def remove_fake_users(collection_name):
 
 def main(bake_step):
     
-
     depsgraph = bpy.context.evaluated_depsgraph_get()
 
     ps_obj = bpy.context.object
     ps_obj_evaluated = depsgraph.objects[ps_obj.name]
-    obj = [obj for obj in bpy.context.selected_objects if obj != ps_obj][0]
+    objs = [obj for obj in bpy.context.selected_objects if obj != ps_obj]
 
     for psy in ps_obj_evaluated.particle_systems:
         ps = psy
         start_frame = bpy.context.scene.frame_start
         end_frame = bpy.context.scene.frame_end
-        obj_list = create_objects_for_particles(ps, obj)
+        obj_list = create_objects_for_particles(ps, objs)
         match_and_keyframe_objects(ps, obj_list, start_frame, end_frame, bake_step)
-
         
 class SNA_PT_CAKEPARTICLES_A5926(bpy.types.Panel):
     bl_label = 'CakeParticles'
