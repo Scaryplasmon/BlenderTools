@@ -88,37 +88,29 @@ def match_and_keyframe_objects(ps, obj_list, start_frame, end_frame, bake_step=1
             keyframe_obj(obj)
 
 def match_object_to_particle(p, obj):
-
-        loc = p.location
-        rot = p.rotation
-        size = p.size
-        if p.alive_state == 'ALIVE':
-            vis = True
+    loc = p.location
+    rot = p.rotation
+    size = p.size
+    vis = p.alive_state == 'ALIVE'
+    obj.location = loc
+    obj.rotation_mode = 'QUATERNION'
+    obj.rotation_quaternion = rot
+    if KEYFRAME_VISIBILITY_SCALE:
+        if not vis:
+            obj.scale = (0.001, 0.001, 0.001)
         else:
-            vis = False
-        obj.location = loc
-    
-        obj.rotation_mode = 'QUATERNION'
-        obj.rotation_quaternion = rot
-        if KEYFRAME_VISIBILITY_SCALE:
-            if vis:
-                obj.scale = (size, size, size)
-            if not vis:
-                obj.scale = (0.0001, 0.0001, 0.0001)
-        obj.hide_viewport = not (vis)
-        obj.hide_render = not (vis)
+            obj.scale = (size, size, size)
+    if vis:  # If it won't affect the visibility, then exclude it from the condition.
+        obj.hide_viewport = False
+        obj.hide_render = False
 
 def keyframe_obj(obj):
-
     if KEYFRAME_LOCATION:
         obj.keyframe_insert("location")
     if KEYFRAME_ROTATION:
         obj.keyframe_insert("rotation_quaternion")
     if KEYFRAME_SCALE:
         obj.keyframe_insert("scale")
-    if KEYFRAME_VISIBILITY:
-        obj.keyframe_insert("hide_viewport")
-        obj.keyframe_insert("hide_render")
 
 def remove_fake_users(collection_name):
     # Get the collection by name
