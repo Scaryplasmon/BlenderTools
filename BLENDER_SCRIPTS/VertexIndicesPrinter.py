@@ -1,23 +1,27 @@
 import bpy
 import bmesh
+import json
 
-def print_selected_vertex_indices():
-    # Check if context is in Edit mode
+def export_vertex_data_json():
+    vertex_data = []
+
     if bpy.context.active_object.mode == 'EDIT':
-        # Get the mesh data and create a temporary BMesh object to manipulate
         mesh_data = bpy.context.active_object.data
         bm = bmesh.from_edit_mesh(mesh_data)
 
-        # Collect the indices of selected vertices
-        selected_vertex_indices = [v.index for v in bm.verts if v.select]
+        for v in bm.verts:
+            if v.select:
+                vertex_data.append({
+                    "index": v.index,
+                    "position": [v.co.x, v.co.y, v.co.z]
+                })
 
-        # Print selected vertex indices in numerical order
-        print(sorted(selected_vertex_indices))
-
-        # Cleanup (not strictly necessary, but good practice)
         bm.free()
     else:
         print("The active object is not in Edit mode")
+        return
 
-# Call the function
-print_selected_vertex_indices()
+    with open("vertex_data.json", "w") as file:
+        json.dump(vertex_data, file)
+
+export_vertex_data_json()
