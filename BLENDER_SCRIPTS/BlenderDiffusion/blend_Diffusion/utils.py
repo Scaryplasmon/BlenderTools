@@ -10,7 +10,6 @@ from diffusers.utils import load_image
 
 freeU = False
 
-
 def generate_image(pipe, device, input_image_path, prompt, negative_prompt, num_inference_steps=20, strength=0.8, guidance_scale=6.5, seed=12345):
 
     # Load the input image# SEED
@@ -47,7 +46,7 @@ def display_image_as_plane(image, plane_name="GeneratedImagePlane", material_nam
     blender_image.pixels = [v / 255 for v in image_bytes]
     
     # Create a new mesh and object
-    bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
+    bpy.ops.mesh.primitive_plane_add(size=2, enter_editmode=False, align='WORLD', location=(0, 0, 0), rotation=(0, 0, 180), scale=(-1, 1, 1)), 
     plane = bpy.context.active_object
     plane.name = plane_name
 
