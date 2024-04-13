@@ -1,6 +1,5 @@
 #BLEND
 import bpy
-from bpy.props import StringProperty, EnumProperty
 from .utils import generate_image, display_image_as_plane
 
 #PIPELINES
@@ -8,11 +7,13 @@ from diffusers import (
     StableDiffusionControlNetPipeline, 
     ControlNetModel,
     StableDiffusionXLPipeline,
-    StableDiffusionImg2ImgPipeline, 
-    StableDiffusionDepth2ImgPipeline,
-    StableDiffusionPipeline,
-    DiffusionPipeline
+    StableDiffusionImg2ImgPipeline
 )
+# TURN PARAMETERS INTO BOOLS AND PATHS LIke normal strings
+# #past
+# StableDiffusionDepth2ImgPipeline,
+# StableDiffusionPipeline,
+# DiffusionPipeline
 
 #SCHEDULERS
 from diffusers import (
@@ -41,16 +42,21 @@ class BlenderDiffusionPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene.blenderdiffusion
+        scene = context.scene.sd15
 
-        layout.prop(scene, "diffusion_type")
+        layout.prop(scene, "sd15_bool")
+        layout.prop(scene, "sd15")
+        layout.prop(scene, "ctrl_net_bool")
+        layout.prop(scene, "ctrl_net")
+        layout.prop(scene, "sdxl_bool")
+        layout.prop(scene, "sdxl")
+        layout.prop(scene, "lora_id")
+        layout.prop(scene, "FreeU")
         layout.prop(scene, "diffusion_scheduler")
         layout.prop(scene, "diffusion_device")
         layout.prop(scene, "diffusion_input_image_path")
-        layout.prop(scene, "diffusion_models_path")
         layout.prop(scene, "diffusion_prompt")
         layout.prop(scene, "diffusion_neg_prompt")
-
         layout.prop(scene, "num_inference_steps")
         layout.prop(scene, "strength")
         layout.prop(scene, "guidance_scale")
@@ -58,18 +64,47 @@ class BlenderDiffusionPanel(bpy.types.Panel):
 
         layout.operator("wm.blenderdiffusion_generate")
         layout.operator("wm.blenderdiffusion_offload")
+        
+# #toINTEGRATEyet
+# class BakeDepth(bpy.types.Operator):
+#     obj = bpy.context.active_object
+#     # You can choose your texture size (This will be the de bake image)
+#     image_name = obj.name + '_BakedTexture'
+#     img = bpy.data.images.new(image_name,512,512)
 
+    
+#     #Due to the presence of any multiple materials, it seems necessary to iterate on all the materials, and assign them a node + the image to bake.
+#     for mat in obj.data.materials:
+
+#         mat.use_nodes = True #Here it is assumed that the materials have been created with nodes, otherwise it would not be possible to assign a node for the Bake, so this step is a bit useless
+#         nodes = mat.node_tree.nodes
+#         texture_node =nodes.new('ShaderNodeTexImage')
+#         texture_node.name = 'Bake_node'
+#         texture_node.select = True
+#         nodes.active = texture_node
+#         texture_node.image = img #Assign the image to the node
+        
+#     bpy.context.view_layer.objects.active = obj
+#     bpy.ops.object.bake(type='DIFFUSE', save_mode='EXTERNAL')
+
+#     img.save_render(filepath='C:\\TEMP\\baked.png')
+        
+#     #In the last step, we are going to delete the nodes we created earlier
+#     for mat in obj.data.materials:
+#         for n in mat.node_tree.nodes:
+#             if n.name == 'Bake_node':
+#                 mat.node_tree.nodes.remove(n)
 
 class BlenderDiffusionGenerateOperator(bpy.types.Operator):
     bl_idname = "wm.blenderdiffusion_generate"
     bl_label = "Generate Image"
 
     def execute(self, context):
-        props = context.scene.blenderdiffusion
+        props = context.scene.sd15
 
         # Define a function to run in the background thread
         def generate_in_background():
-            pipeline = setup_pipeline(props.diffusion_type, props.diffusion_models_path, props.diffusion_device.lower(), props.diffusion_scheduler)
+            pipeline = setup_pipeline(props.diffusion_device.lower(), props.diffusion_scheduler, props.sd15,props.ctrl_net, props.sdxl, props.FreeU, props.lora_id)
             generated_image = generate_image(
                 pipe=pipeline,
                 device="cuda" if torch.cuda.is_available() else "cpu",
@@ -91,48 +126,30 @@ class BlenderDiffusionGenerateOperator(bpy.types.Operator):
         threading.Thread(target=generate_in_background).start()
 
         return {'FINISHED'}
-
     
-def setup_pipeline(diffusion_type, models_path, device, scheduler):
+def setup_pipeline(device, scheduler, sd15 = "runwayml/stable-diffusion-v1-5", sd15_bool = True, ctrl_net = "", ctrl_net_bool = False,  sdxl = "",  sdxl_bool = False, freeU = False, lora_id = "None"):
 
     device = "cuda" if torch.cuda.is_available() else "NOcpuPlease"
     #PIPELINE
     print(device)
-    if diffusion_type == 'control_CANNY':
-        controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=torch.float16, use_safetensors=True)
-        model_id = "runwayml/stable-diffusion-v1-5"
-        pipe = StableDiffusionControlNetPipeline.from_pretrained(model_id, controlnet=controlnet, torch_dtype=torch.float16, use_safetensors=True).to(device)
-
-        pipe.enable_xformers_memory_efficient_attention()
-
-    elif diffusion_type == 'SSD-1B':
-        model_id = "segmind/SSD-1B"
-        pipe = StableDiffusionXLPipeline.from_pretrained(model_id, torch_dtype=torch.float16, use_safetensors=True, variant="fp16").to(device)
-
-        pipe.enable_xformers_memory_efficient_attention()
-
-
-    elif diffusion_type == 'SD2':
-        model_id = "stabilityai/stable-diffusion-2-base"
-        pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id).to(device)
-
-        pipe.enable_xformers_memory_efficient_attention()
-
-
-    elif diffusion_type == 'local':
-        model_id = models_path
-        pipe = StableDiffusionImg2ImgPipeline.from_single_file(model_id, torch_dtype=torch.float16, use_safetensors=True).to(device)
-
-        pipe.enable_xformers_memory_efficient_attention()
-
-
-    else:
-        # Default to SD2 if no type matches
-        model_id = "runwayml/stable-diffusion-v1-5"
-        pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id).to(device)
-
-        pipe.enable_xformers_memory_efficient_attention()
-
+    if sd15_bool == True and sd15 != "":
+        model_id = sd15
+        if ctrl_net_bool == True:
+            if ctrl_net != "None":
+                controlnet = ControlNetModel.from_pretrained(ctrl_net, torch_dtype=torch.float16, use_safetensors=True)
+                pipe = StableDiffusionControlNetPipeline.from_pretrained(model_id, controlnet=controlnet, torch_dtype=torch.float16, use_safetensors=True).to(device)
+                pipe.enable_xformers_memory_efficient_attention()
+        else:
+            if model_id != "None":          
+                pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, torch_dtype=torch.float16, use_safetensors=True).to(device)
+                pipe.enable_xformers_memory_efficient_attention()
+    elif sd15_bool== False and sdxl == True:
+        model_id = sdxl
+        if model_id != "None":
+            pipe = StableDiffusionXLPipeline.from_pretrained(model_id, torch_dtype=torch.float16, use_safetensors=True, variant="fp16").to(device)
+            pipe.enable_xformers_memory_efficient_attention()
+        else:
+            print("No model provided")
 
     #SCHEDULERs
     if scheduler == 'LCM':
@@ -153,8 +170,17 @@ def setup_pipeline(diffusion_type, models_path, device, scheduler):
         pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
     else:
         pipe.scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
-
-    
+#LORA
+    if lora_id == "None":
+        print("No LORA ID provided")
+    else:
+        pipe.load_lora_weights(lora_id)
+        pipe.fuse_lora()
+#FREEU
+    if freeU == True:
+        #tends to saturate the pictures a lot! great for stylized outputs
+        pipe.enable_freeu(s1=0.9, s2=0.2, b1=1.2, b2=1.4)
+    #just making sure xformers kicks in, everyday is a good day for xformers    
     pipe.enable_xformers_memory_efficient_attention()
     print(pipe)
     return pipe

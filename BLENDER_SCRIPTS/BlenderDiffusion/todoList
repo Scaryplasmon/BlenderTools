@@ -1,0 +1,11 @@
+-add width and height taken from the Blender scene details
+-Allow animations
+--INput and OUTput paths, saving renders in input and generates in outputs
+-figure out AnimDiff in diffusers
+
+-fix local loading issues
+
+--implement ++Schedulers and ++Pipelines
+
+--Inpainting
+--Texture gen via depth?

@@ -2,7 +2,7 @@ import bpy
 import os
 import sys
 from . import main
-
+from bpy.props import StringProperty, EnumProperty, BoolProperty, IntProperty
 bl_info = {
     "name": "BlenderDiffusion",
     "blender": (4, 0, 2),
@@ -14,13 +14,46 @@ bl_info = {
 }
 
 class BlenderDiffusionProperties(bpy.types.PropertyGroup):
-    diffusion_type: bpy.props.EnumProperty(
-        name="Type",
-        description="Choose the type of diffusion",
-        items=[('control_CANNY', "Control CANNY", ""),
-               ('SSD_1B', "SSD-1B", ""),
-               ('SD2', "SD2", ""),
-               ('LOCAL', "Local", "")]
+    sd15: bpy.props.StringProperty(
+        name="sd15",
+        description="paste in the model path",
+        default="runwayml/stable-diffusion-v1-5"
+    )
+    sd15_bool: bpy.props.BoolProperty(
+        name="sd15_bool",
+        description="paste in the model path",
+        default=True
+    )
+    ctrl_net: bpy.props.StringProperty(
+        name="ctrl_net",
+        description="paste in the model path",
+        default="None"
+    )
+    ctrl_net_bool: bpy.props.BoolProperty(
+        name="ctrl_net_bool",
+        description="paste in the model path",
+        default=False
+    )
+    sdxl: bpy.props.StringProperty(
+        name="sdxl",
+        description="paste in the model path",
+        default="None"
+    )
+    sdxl_bool: bpy.props.BoolProperty(
+        name="sdxl_bool",
+        description="paste in the model path",
+        default=False
+    )
+
+    lora_id: bpy.props.StringProperty(
+        name="lora_id",
+        description="paste in the model path",
+        default=""
+    )
+    FreeU: bpy.props.BoolProperty(
+        name="FreeU",
+        description="Enable FreeU",
+        default=False
     )
     diffusion_scheduler: bpy.props.EnumProperty(
         name="Scheduler",
@@ -38,11 +71,6 @@ class BlenderDiffusionProperties(bpy.types.PropertyGroup):
         name="Input Image Path",
         description="Path to the input image",
         subtype='FILE_PATH'
-    )
-    diffusion_models_path: bpy.props.StringProperty(
-        name="Models Path",
-        description="Path to the models directory",
-        subtype='DIR_PATH'
     )
     diffusion_prompt: bpy.props.StringProperty(
         name="Prompt",
@@ -83,11 +111,11 @@ class BlenderDiffusionProperties(bpy.types.PropertyGroup):
 
 def register():
     bpy.utils.register_class(BlenderDiffusionProperties)
-    bpy.types.Scene.blenderdiffusion = bpy.props.PointerProperty(type=BlenderDiffusionProperties)
+    bpy.types.Scene.sd15 = bpy.props.PointerProperty(type=BlenderDiffusionProperties)
     main.register()
 
 def unregister():
-    del bpy.types.Scene.blenderdiffusion
+    del bpy.types.Scene.sd15
     bpy.utils.unregister_class(BlenderDiffusionProperties)
     main.unregister()
 

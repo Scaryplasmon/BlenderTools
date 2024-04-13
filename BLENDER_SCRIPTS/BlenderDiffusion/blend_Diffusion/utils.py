@@ -15,11 +15,6 @@ def generate_image(pipe, device, input_image_path, prompt, negative_prompt, num_
     # Load the input image# SEED
     generator = torch.Generator(device).manual_seed(seed)   
 
-    # FreeU
-    if freeU == True:
-        #tends to saturate the pictures a lot! great for stylized outputs
-        pipe.enable_freeu(s1=0.9, s2=0.2, b1=1.2, b2=1.4)
-
     # InputIMAGE
     input_image = Image.open(input_image_path).convert("RGB")
     
